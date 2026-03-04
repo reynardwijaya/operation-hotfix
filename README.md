@@ -175,6 +175,48 @@ Open Chrome DevTools → Network → throttle to "Slow 3G" and type quickly in t
 
 ---
 
+## New Feature: Audit Trail
+
+> **Product Request:** "Warehouse managers want an activity log — something that shows what changed and when for each shipment. We need a system that records every status change automatically."
+
+**Affected area:** New — database layer and server action  
+**Scope:** Design the schema, implement the insert logic, and document your decisions
+
+### What to Build
+
+Every time a shipment's status is updated, the system must record the event. At minimum, each log entry must capture:
+
+- Which shipment was changed (a reference to `shipments.id`)
+- What the old status was
+- What the new status was
+- When the change occurred
+
+### Two Decisions to Make
+
+You must make both of the following decisions and defend them in `docs/AUDIT_TRAIL_IMPLEMENTATION.md`:
+
+**1. Schema design** — Design the `audit_logs` table. What columns do you need? What data types? Does this table need RLS? If so, what policy is appropriate for a write-only log that users should not be able to tamper with?
+
+**2. Insert mechanism** — Choose one of two approaches:
+
+| Approach             | Description                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Server Action**    | Write the log entry inside `update-status.ts` immediately after a successful status change                   |
+| **Database Trigger** | Write an `AFTER UPDATE` Postgres trigger on the `shipments` table that logs the change at the database level |
+
+Neither approach is automatically correct. Both have real trade-offs. You must pick one and justify your choice.
+
+### Deliverable: `docs/AUDIT_TRAIL_IMPLEMENTATION.md`
+
+This is a one-page design document. It must cover:
+
+1. **Schema** — The `CREATE TABLE` statement for `audit_logs` with a short rationale for each column
+2. **RLS** — Whether the table has RLS, what policy you applied, and why
+3. **Mechanism** — Which insert approach you chose and your reasoning
+4. **Trade-offs** — One concrete advantage and one concrete disadvantage of the approach you did not choose
+
+---
+
 ## Deliverables
 
 Your submission must include:
@@ -185,24 +227,28 @@ Your submission must include:
 - [ ] **Bug 4 fixed** — Cargo column shows item name and weight for all non-null rows
 - [ ] **Bug 5 fixed** — Search results consistently match the current input value
 - [ ] **Bug 6 fixed** — Delivered → Pending either persists or shows a clear error toast (not a false success)
+- [ ] **Audit Trail implemented** — Every status change writes a log entry to the database
 - [ ] **`docs/DEBUG_JOURNAL.md` completed** — One entry per bug in the required format
+- [ ] **`docs/AUDIT_TRAIL_IMPLEMENTATION.md` completed** — Schema, RLS, mechanism, and trade-offs documented
 
 ---
 
 ## Passing Criteria
 
-| Category              | Points  | What We Look For                                                                               |
-| --------------------- | ------- | ---------------------------------------------------------------------------------------------- |
-| Bug 1 — Fixed         | 10      | Table shows data on load. Root cause in DEBUG_JOURNAL.                                         |
-| Bug 2 — Fixed         | 10      | All status transitions persist. Root cause in DEBUG_JOURNAL.                                   |
-| Bug 3 — Fixed         | 10      | No server flooding on load. Root cause in DEBUG_JOURNAL.                                       |
-| Bug 4 — Fixed         | 10      | Cargo data renders for all non-null rows. Root cause in DEBUG_JOURNAL.                         |
-| Bug 5 — Fixed         | 10      | Search is stable under rapid typing. Root cause in DEBUG_JOURNAL.                              |
-| Bug 6 — Fixed         | 10      | Delivered → Pending handled correctly. Root cause in DEBUG_JOURNAL.                            |
-| DEBUG_JOURNAL quality | 20      | All 6 entries complete. Hypothesis shows genuine investigation, not just the final answer.     |
-| AI Prompt quality     | 10      | Prompts are contextual (file + expected vs actual + specific question). No "fix this" prompts. |
-| Code quality          | 10      | Changes are minimal and targeted. TypeScript respected. No unrelated refactoring.              |
-| **Total**             | **100** |                                                                                                |
+| Category                      | Points  | What We Look For                                                                               |
+| ----------------------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| Bug 1 — Fixed                 | 10      | Table shows data on load. Root cause in DEBUG_JOURNAL.                                         |
+| Bug 2 — Fixed                 | 10      | All status transitions persist. Root cause in DEBUG_JOURNAL.                                   |
+| Bug 3 — Fixed                 | 10      | No server flooding on load. Root cause in DEBUG_JOURNAL.                                       |
+| Bug 4 — Fixed                 | 10      | Cargo data renders for all non-null rows. Root cause in DEBUG_JOURNAL.                         |
+| Bug 5 — Fixed                 | 10      | Search is stable under rapid typing. Root cause in DEBUG_JOURNAL.                              |
+| Bug 6 — Fixed                 | 10      | Delivered → Pending handled correctly. Root cause in DEBUG_JOURNAL.                            |
+| Audit Trail — Implemented     | 15      | Log entries are written correctly on every status change. Schema is sensible and complete.     |
+| DEBUG_JOURNAL quality         | 15      | All 6 entries complete. Hypothesis shows genuine investigation, not just the final answer.     |
+| AUDIT_TRAIL_IMPLEMENTATION.md | 10      | All four sections present. Design choices are explained, not just stated.                      |
+| AI Prompt quality             | 10      | Prompts are contextual (file + expected vs actual + specific question). No "fix this" prompts. |
+| Code quality                  | 10      | Changes are minimal and targeted. TypeScript respected. No unrelated refactoring.              |
+| **Total**                     | **120** |                                                                                                |
 
 ### Automatic Fail Conditions
 
@@ -236,6 +282,9 @@ The trigger enforces a real business rule. The correct fix is in the application
 
 **You must document your process.**  
 `docs/DEBUG_JOURNAL.md` is not optional. A correct fix without documentation scores 50% of the available points for that bug.
+
+**You must document your design.**  
+`docs/AUDIT_TRAIL_IMPLEMENTATION.md` is not optional. A working Audit Trail implementation without a design document scores 0 on the documentation category. The document does not need to be long — it needs to be precise.
 
 **You must explain your code.**  
 During evaluation you may be asked: "Why does this line exist?" or "What was wrong before your change?" "I'm not sure, the AI suggested it" is a fail.
