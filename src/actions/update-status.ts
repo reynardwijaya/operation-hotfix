@@ -1,12 +1,24 @@
-'use server'
+"use server";
 
-import { supabase } from '@/lib/supabase'
-import { revalidatePath } from 'next/cache'
+import { supabase } from "@/lib/supabase";
+import { revalidatePath } from "next/cache";
 
 export async function updateShipmentStatus(id: string, status: string) {
-  supabase.from('shipments').update({ status }).eq('id', id)
+  const { data, error } = await supabase
+    .from("shipments")
+    .update({ status })
+    .eq("id", id)
+    .select();
 
-  revalidatePath('/dashboard')
-  // TODO: surface errors to caller
-  return { success: true }
+  console.log("[SERVER] Attempted update:", { id, status });
+  console.log("[SERVER] Supabase error:", error);
+  console.log("[SERVER] Updated rows:", data);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/dashboard");
+
+  return { success: true };
 }

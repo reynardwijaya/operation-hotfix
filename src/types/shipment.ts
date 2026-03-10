@@ -1,9 +1,10 @@
+export type CargoItem = {
+  item: string;
+  weight_kg: number;
+};
+
 export type Shipment = {
-  id: string
-  created_at: string
-  status: string
-  cargo_details: {
-    item: string
-    weight_kg: number
-  } | null
-}
+  id: string;
+  status: string;
+  cargo_details: CargoItem[] | null;
+};
