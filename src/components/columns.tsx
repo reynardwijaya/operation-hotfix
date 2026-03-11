@@ -40,27 +40,19 @@ export const columns: ColumnDef<Shipment>[] = [
     cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
   },
   {
-    accessorKey: "cargo_details",
-    header: "Cargo",
+    accessorKey: 'cargo_details',
+    header: 'Cargo',
     cell: ({ row }) => {
-      const cargo = row.getValue<Shipment["cargo_details"]>("cargo_details");
-
-      if (!cargo) {
-        return <span className="text-sm text-muted-foreground">—</span>;
-      }
-
-      const firstItem = Array.isArray(cargo) ? cargo[0] : cargo;
-
-      if (!firstItem) {
-        return <span className="text-sm text-muted-foreground">—</span>;
-      }
-
+      const cargo = row.getValue<Shipment['cargo_details']>('cargo_details')
+      console.log('cargo_details row:', cargo)
+      if (!cargo)
+        return <span className='text-sm text-muted-foreground'>—</span>
       return (
-        <div className="text-sm">
-          <p className="font-medium">{firstItem.item}</p>
-          <p className="text-muted-foreground">{firstItem.weight_kg} kg</p>
+        <div className='text-sm'>
+          <p className='font-medium'>{cargo.item}</p>
+          <p className='text-muted-foreground'>{cargo.weight_kg} kg</p>
         </div>
-      );
+      )
     },
   },
   {

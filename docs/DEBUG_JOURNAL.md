@@ -25,31 +25,33 @@ using (true);
 
 ## Bug 2 — Ghost Mutation
 
-| Field          | Your Entry |
-| -------------- | ---------- |
-| **Symptom**    | In the dashboard, changing the shipment status shows a success notification, but after refreshing the page the status returns to its original value.
+| Field      | Your Entry                                                                                                                                                                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Symptom    | The dashboard shows a success toast when changing shipment status, but after refresh the status reverts to the original.                                                                                                                     |
+| Hypothesis | The server action executes the Supabase update query without awaiting the result or checking for errors, causing it to return success even if the update fails.                                                                              |
+| AI Prompt  | 1. Debugging a server action: updating shipment status always returns success but doesn't persist. What could cause this?<br>2. If a Supabase update call isn't awaited in an async function, could it return before the mutation completes? |
+| Fix        | Added `await` to the Supabase update query and checked the returned `{ error }` before returning success.                                                                                                                                    |
 
-           |
-| **Hypothesis** | The server action executes the Supabase update query without awaiting the result or checking for errors, causing the function to return success even if the update fails.           |
-| **AI Prompt**  |  1. I'am debugging a server action. When I update a shipment status always returns success but the value doesn't persist after refresh. What could cause an update mutation to silently fail?
 
-2. If a Supabase update call isn't awaited inside an async function, could the function return before the mutation completes?
-          |
-| **Fix**        | Added `await` to the Supabase update query and checked the returned `{ error }` before returning success from the server action. |
+| Field          | Your Entry                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Symptom**    | Opening the dashboard page causes the UI to freeze and the server logs show repeated `GET /dashboard` requests being triggered continuously. The page keeps reloading and becomes unresponsive after a short time.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Hypothesis** | In the `DataTable` component, the state of the table's sorting is synchronized with the URL via `router.push()` inside a `useEffect` hook. The dependency array for the hook includes `table.getState().sorting`, which creates a new reference every render. This causes the effect to run on every render, leading to a loop by repeatedly calling `router.push()` and rerendering the component. Additionally, including `searchParams` in the dependency array causes the effect to run every time the URL changes.                                                                                                      |
+| **AI Prompt**  | 1. I'm debugging the dashboard page, which sends repeated `GET /dashboard` requests and eventually freezes the page. It seems to happen inside a client-side `DataTable` component, syncing the sorting state with the URL by using `router.push()` inside a `useEffect`. Does calling `router.push()` inside a `useEffect` potentially cause an infinite rerender loop with Next.js?<br><br>2. While investigating, ESLint also shows this warning: *"React Hook useEffect has a missing dependency: 'sorting'. Either include it or remove the dependency array."* What does this mean?<br><br>3. Here's the code snippet: 
 
----
+ useEffect(() => {
+  const params = new URLSearchParams(searchParams.toString());
 
-## Bug 3 — The Invisible Cargo
+  if (sorting.length > 0) {
+    params.set('sort', sorting[0].id);
+    params.set('desc', String(sorting[0].desc));
+  } else {
+    params.delete('sort');
+    params.delete('desc');
+  }
 
-| Field          | Your Entry |
-| -------------- | ---------- |
-| **Symptom**    | Opening the dashboard page causes the UI to freeze and the server logs show repeated GET /dashboard requests being triggered continuously. The page keeps reloading and becomes unresponsive after a short time           |
-| **Hypothesis** | In the DataTable component, the state of the table's sorting is synchronized with the URL by the router.push() function inside the useEffect hook. The dependency array for the hook includes table.getState().sorting, which creates a new reference every time the component renders. This makes the effect run every time the component renders, causing a loop by repeatedly calling router.push() and hence rerendering the component. Moreover, the inclusion of the searchParams object in the dependency array will cause the effect to run every time the URL changes.           |
-| **AI Prompt**  |  1. I'm debugging the dashboard page, which sends repeated GET /dashboard requests and eventually freezes the page. It seems to happen inside a client-side DataTable component, syncing the sorting state with the URL by using router.push inside a useEffect. Does calling router.push inside a useEffect potentially cause an infinite rerender loop with Next.js?
-
-2. While investigating, ESLint also shows this warning React Hook useEffect has a missing dependency: 'sorting'. Either include it or remove the dependency array. what happen?
-
-3. Here's the code: useEffect(() => { const params = new URLSearchParams(searchParams.toString()) if (sorting.length > 0) { params.set('sort', sorting[0].id) params.set('desc', String(sorting[0].desc)) } else { params.delete('sort') params.delete('desc') } router.push(/dashboard?${params.toString()}) }, [table.getState().sorting, searchParams, router]) Could referencing table.getState().sorting in the dependency array cause the effect to run on every render?
+  router.push(`/dashboard?${params.toString()}`);
+}, [table.getState().sorting, searchParams, router]);
 
 4. If I change the dependency to use the sorting state directly instead of table.getState().sorting, would that be a more stable dependency and prevent the rerender loop?
 
